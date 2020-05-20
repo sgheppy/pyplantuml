@@ -75,6 +75,7 @@ Example:
 
 
 def convert_local():
+    print("convert local")
     main()
 
 

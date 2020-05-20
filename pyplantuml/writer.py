@@ -1,7 +1,7 @@
 import os
 
 from pylint.pyreverse.utils import is_interface
-
+from pylint.pyreverse.writer import DiagramWriter
 
 EMPTY = "\n"
 STARTUML = "@startuml\n"
@@ -96,7 +96,7 @@ def writePackageDiagram(diagram):
 def writeClassDiagram(diagram):
     stream = STARTUML
     stream += STYLECLASS
-    stream += TITLE.format(title=diagram.title)
+    # stream += TITLE.format(title=diagram.title)
 
     for obj in diagram.objects:
         attributes = diagram.get_attrs(obj.node)
@@ -180,3 +180,121 @@ def visualizeLocally(umls):
             displayLocalImage(uml, jar)
         )
     return images
+
+class PlantUmlWriter(DiagramWriter):
+    def __init__(self, config):
+        print(config)
+        styles = [
+            dict(arrowstyle="solid", backarrowstyle="none", backarrowsize=0),
+            dict(arrowstyle="solid", backarrowstyle="none", backarrowsize=10),
+            dict(
+                arrowstyle="solid",
+                backarrowstyle="none",
+                linestyle="dotted",
+                backarrowsize=10,
+            ),
+            dict(arrowstyle="solid", backarrowstyle="none", textcolor="green"),
+        ]
+        DiagramWriter.__init__(self, config, styles)
+
+    def set_printer(self, file_name, basename):
+        """initialize VCGWriter for a UML graph"""
+        print("filename %s" % file_name)
+        self.graph_file = open(file_name, "w+")
+        self.printer = PlantUmlPrinter(self.graph_file)
+        self.printer.open_graph()
+        self.printer.emit_node = self.printer.node
+        self.printer.emit_edge = self.printer.edge
+
+    def close_graph(self):
+        """print the dot graph into <file_name>"""
+        self.printer.close_graph()
+        self.graph_file.close()
+
+    def get_values(self, obj):
+        # label = "\nclass %s {\n" % obj.title
+        # if not self.config.only_classnames:
+        #     attrs = obj.attrs
+        #     methods = [func.name for func in obj.methods]
+        #     # box width for UML like diagram
+        #     for attr in attrs:
+        #         print(attr)
+        #         label = "%s\n\t%s" % (label, attr)
+            
+        #     for func in methods:
+        #         label = "%s\n\t%s()" % (label, func)
+        #     label = "%s\n}" % (label)
+        # print(label)
+        stream = ""
+        attributes = obj.attrs
+        methods = [func for func in obj.methods]
+
+        if attributes or methods:
+            template = INTERFACEOPEN if is_interface(obj.node) else CLASSOPEN
+            stream += template.format(name=obj.title)
+
+            for attr in sorted(attributes):
+                attrDesc = getAttrDesc(attr)
+                stream += CLASSATTR.format(name=attrDesc)
+
+            for method in sorted(methods, key=lambda m: m):
+                methodDesc = getAttrDesc(method.name)
+                if method.args.args:
+                    args = [arg.name for arg in method.args.args if arg.name != "self"]
+                else:
+                    args = []
+                stream += CLASSMETHOD.format(
+                    name=methodDesc, args=", ".join(args)
+                )
+
+            stream += CLOSE
+        else:
+            template = INTERFACE if is_interface(obj.node) else CLASS
+            stream += template.format(name=obj.title)
+        print("#"*80)
+        print(stream)
+        return dict(label=stream, shape="")
+
+class PlantUmlPrinter:
+    def __init__(self, output_stream):
+        self._stream = output_stream
+        self._indent = ""
+     
+    def open_graph(self, **args):
+        self._stream.write("%s\n" % STARTUML)
+        self._inc_indent()
+
+    def close_graph(self):
+        """close a vcg graph
+        """
+        self._dec_indent()
+        self._stream.write("%s\n" % ENDUML)
+
+    def _inc_indent(self):
+        """increment indentation
+        """
+        self._indent = "  %s" % self._indent
+    
+    def _dec_indent(self):
+        """decrement indentation
+        """
+        self._indent = self._indent[:-2]
+
+    def node(self, idx, **args):
+        """draw a node
+        """
+        #self._stream.write('class %s {' % (title))
+        self._stream.write('%s' % (args['label']))
+        print("node attributes{}".format(args))
+        #self._write_attributes(NODE_ATTRS, **args)
+        
+    
+    def edge(self, from_node, to_node, edge_type="", **args):
+        """draw an edge from a node to another.
+        """
+        self._stream.write(
+             '%s %s %s' % ( from_node, edge_type,  to_node)
+         )
+        print("edge type %s" % edge_type)
+        #self._write_attributes(EDGE_ATTRS, **args)
+        self._stream.write("}\n")
