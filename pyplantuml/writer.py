@@ -184,16 +184,22 @@ def visualizeLocally(umls):
 class PlantUmlWriter(DiagramWriter):
     def __init__(self, config):
         print(config)
+        # styles = [
+        #     dict(arrowstyle="solid", backarrowstyle="none", backarrowsize=0),
+        #     dict(arrowstyle="solid", backarrowstyle="none", backarrowsize=10),
+        #     dict(
+        #         arrowstyle="solid",
+        #         backarrowstyle="none",
+        #         linestyle="dotted",
+        #         backarrowsize=10,
+        #     ),
+        #     dict(arrowstyle="solid", backarrowstyle="none", textcolor="green"),
+        # ]
         styles = [
-            dict(arrowstyle="solid", backarrowstyle="none", backarrowsize=0),
-            dict(arrowstyle="solid", backarrowstyle="none", backarrowsize=10),
-            dict(
-                arrowstyle="solid",
-                backarrowstyle="none",
-                linestyle="dotted",
-                backarrowsize=10,
-            ),
-            dict(arrowstyle="solid", backarrowstyle="none", textcolor="green"),
+            dict(edge_type="+--"),
+            dict(edge_type="<|--"),
+            dict(edge_type="*--"),
+            dict(edge_type="o--")
         ]
         DiagramWriter.__init__(self, config, styles)
 
@@ -210,6 +216,9 @@ class PlantUmlWriter(DiagramWriter):
         """print the dot graph into <file_name>"""
         self.printer.close_graph()
         self.graph_file.close()
+    def get_title(self, obj):
+        """get project title"""
+        return obj.title
 
     def get_values(self, obj):
         # label = "\nclass %s {\n" % obj.title
@@ -231,13 +240,13 @@ class PlantUmlWriter(DiagramWriter):
 
         if attributes or methods:
             template = INTERFACEOPEN if is_interface(obj.node) else CLASSOPEN
-            stream += template.format(name=obj.title)
+            stream += template.format(name=os.path.basename(obj.title))
 
             for attr in sorted(attributes):
                 attrDesc = getAttrDesc(attr)
                 stream += CLASSATTR.format(name=attrDesc)
 
-            for method in sorted(methods, key=lambda m: m):
+            for method in methods:
                 methodDesc = getAttrDesc(method.name)
                 if method.args.args:
                     args = [arg.name for arg in method.args.args if arg.name != "self"]
@@ -250,15 +259,16 @@ class PlantUmlWriter(DiagramWriter):
             stream += CLOSE
         else:
             template = INTERFACE if is_interface(obj.node) else CLASS
-            stream += template.format(name=obj.title)
+            stream += template.format(name=os.path.basename(obj.title))
         print("#"*80)
         print(stream)
-        return dict(label=stream, shape="")
+        return dict(label=stream,name=os.path.basename(obj.title) , shape="")
 
 class PlantUmlPrinter:
     def __init__(self, output_stream):
         self._stream = output_stream
         self._indent = ""
+        self.obj_map = {}
      
     def open_graph(self, **args):
         self._stream.write("%s\n" % STARTUML)
@@ -269,6 +279,7 @@ class PlantUmlPrinter:
         """
         self._dec_indent()
         self._stream.write("%s\n" % ENDUML)
+        
 
     def _inc_indent(self):
         """increment indentation
@@ -285,16 +296,28 @@ class PlantUmlPrinter:
         """
         #self._stream.write('class %s {' % (title))
         self._stream.write('%s' % (args['label']))
+        print(args)
+        if 'name' in args.keys():
+            self.obj_map[idx] = args['name']
+        else:
+            self.obj_map[idx] = args['label']
         print("node attributes{}".format(args))
         #self._write_attributes(NODE_ATTRS, **args)
         
     
-    def edge(self, from_node, to_node, edge_type="", **args):
+    def edge(self, from_node, to_node, **args):
         """draw an edge from a node to another.
         """
         self._stream.write(
-             '%s %s %s' % ( from_node, edge_type,  to_node)
+             '%s %s %s' % (self.obj_map[to_node], args["edge_type"],  self.obj_map[from_node])
          )
-        print("edge type %s" % edge_type)
+        
+        print('%s' % ( args))
+        print('%s %s %s' % (self.obj_map[to_node], args["edge_type"],  self.obj_map[from_node]))
+        if "label" in args.keys():
+          self._stream.write(
+             ' : %s' % ( args["label"], )
+         )  
+        #print("edge attrs %s" % EDGE_ATTRS)
         #self._write_attributes(EDGE_ATTRS, **args)
-        self._stream.write("}\n")
+        self._stream.write("\n")
