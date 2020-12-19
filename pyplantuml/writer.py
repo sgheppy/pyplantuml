@@ -183,7 +183,7 @@ def visualizeLocally(umls):
 
 class PlantUmlWriter(DiagramWriter):
     def __init__(self, config):
-        print(config)
+        #print(config)
         # styles = [
         #     dict(arrowstyle="solid", backarrowstyle="none", backarrowsize=0),
         #     dict(arrowstyle="solid", backarrowstyle="none", backarrowsize=10),
@@ -221,6 +221,13 @@ class PlantUmlWriter(DiagramWriter):
         return obj.title
 
     def get_values(self, obj):
+        print("="*100)
+        print(obj)
+        print(type(obj.node))
+        print(obj.node)
+        print(obj.attrs)
+        print(type(obj.attrs))
+        print("="*100)
         # label = "\nclass %s {\n" % obj.title
         # if not self.config.only_classnames:
         #     attrs = obj.attrs
@@ -260,8 +267,8 @@ class PlantUmlWriter(DiagramWriter):
         else:
             template = INTERFACE if is_interface(obj.node) else CLASS
             stream += template.format(name=os.path.basename(obj.title))
-        print("#"*80)
-        print(stream)
+        #print("#"*80)
+        #print(stream)
         return dict(label=stream,name=os.path.basename(obj.title) , shape="")
 
 class PlantUmlPrinter:
@@ -296,12 +303,12 @@ class PlantUmlPrinter:
         """
         #self._stream.write('class %s {' % (title))
         self._stream.write('%s' % (args['label']))
-        print(args)
+        #print(args)
         if 'name' in args.keys():
             self.obj_map[idx] = args['name']
         else:
             self.obj_map[idx] = args['label']
-        print("node attributes{}".format(args))
+        #print("node attributes{}".format(args))
         #self._write_attributes(NODE_ATTRS, **args)
         
     
@@ -312,8 +319,8 @@ class PlantUmlPrinter:
              '%s %s %s' % (self.obj_map[to_node], args["edge_type"],  self.obj_map[from_node])
          )
         
-        print('%s' % ( args))
-        print('%s %s %s' % (self.obj_map[to_node], args["edge_type"],  self.obj_map[from_node]))
+        #print('%s' % ( args))
+        #print('%s %s %s' % (self.obj_map[to_node], args["edge_type"],  self.obj_map[from_node]))
         if "label" in args.keys():
           self._stream.write(
              ' : %s' % ( args["label"], )

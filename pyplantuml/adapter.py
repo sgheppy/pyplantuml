@@ -31,7 +31,7 @@ class PyreverseAdapter(Run):
         # Insert current working directory to the python path to recognize
         # dependencies to local modules even if cwd is not in the PYTHONPATH.
         sys.path.insert(0, os.getcwd())
-        print(os.getcwd())
+        #print(os.getcwd())
         try:
             project = project_from_files(
                 args,

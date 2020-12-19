@@ -61,7 +61,7 @@ Example:
     umls = writer.toPlantUml(diadefs, [])
     for uml in umls:
         umlpath = os.path.abspath(uml)
-        print("Created: {0}".format(umlpath))
+        #print("Created: {0}".format(umlpath))
 
         # Conversion using the online form.
         if convert_online:
@@ -71,13 +71,14 @@ Example:
         images = writer.visualizeLocally(umls)
         for image in images:
             imagepath = os.path.abspath(image)
-            print("Created: {0}".format(imagepath))
+            #print("Created: {0}".format(imagepath))
 
 
 def convert_local():
-    print("convert local")
+    #print("convert local")
     main()
 
 
 def convert_online():
     main(convert_online=True)
+
